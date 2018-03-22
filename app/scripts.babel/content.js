@@ -4,7 +4,7 @@ import pluralize from 'pluralize';
 let initFlag = true;
 let displayFlag = true;
 
-chrome.extension.onMessage.addListener((request, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request == 'goRuby') {
     chrome.storage.sync.get(null, options => {
       if (Object.keys(options).length == 0) {
