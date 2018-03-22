@@ -22,7 +22,8 @@ gulp.task('extras', () => {
   ], {
     base: 'app',
     dot: true
-  }).pipe(gulp.dest('dist'));
+  }).pipe(gulp.dest('dist'))
+    .pipe(gulp.dest('dist-firefox'));
 });
 
 function lint(files, options) {
@@ -52,7 +53,8 @@ gulp.task('images', () => {
       console.log(err);
       this.end();
     })))
-    .pipe(gulp.dest('dist/images'));
+    .pipe(gulp.dest('dist/images'))
+    .pipe(gulp.dest('dist-firefox/images'));
 });
 
 gulp.task('html',  () => {
@@ -63,7 +65,8 @@ gulp.task('html',  () => {
     .pipe($.if('*.css', $.cleanCss({compatibility: '*'})))
     .pipe($.sourcemaps.write())
     .pipe($.if('*.html', $.htmlmin({removeComments: true, collapseWhitespace: true})))
-    .pipe(gulp.dest('dist'));
+    .pipe(gulp.dest('dist'))
+    .pipe(gulp.dest('dist-firefox'));
 });
 
 gulp.task('chromeManifest', () => {
@@ -81,7 +84,14 @@ gulp.task('chromeManifest', () => {
   .pipe($.if('*.js', $.sourcemaps.init()))
   .pipe($.if('*.js', $.uglify()))
   .pipe($.if('*.js', $.sourcemaps.write('.')))
-  .pipe(gulp.dest('dist'));
+  .pipe(gulp.dest('dist'))
+  .pipe($.if('manifest.json', $.jsonEditor(json => {
+    json.options_ui = {page: json.options_page};
+    delete json.options_page;
+    delete json.background.persistent;
+    return json;
+  })))
+  .pipe(gulp.dest('dist-firefox'));
 });
 
 gulp.task('babel', () => {
@@ -106,7 +116,7 @@ gulp.task('babel', () => {
   return es.merge.apply(null, tasks);
 });
 
-gulp.task('clean', del.bind(null, ['.tmp', 'dist']));
+gulp.task('clean', del.bind(null, ['.tmp', 'dist', 'dist-firefox']));
 
 gulp.task('watch', ['lint', 'babel'], () => {
   $.livereload.listen();
@@ -139,6 +149,13 @@ gulp.task('package', function () {
   return gulp.src('dist/**')
       .pipe($.zip('irodo reader-' + manifest.version + '.zip'))
       .pipe(gulp.dest('package'));
+});
+
+gulp.task('package-firefox', function () {
+  var manifest = require('./dist-firefox/manifest.json');
+  return gulp.src('dist-firefox/**')
+      .pipe($.zip('irodo reader-' + manifest.version + '-firefox.zip'))
+      .pipe(gulp.dest('package-firefox'));
 });
 
 gulp.task('build', (cb) => {
